@@ -5,7 +5,7 @@ use std::{env, process};
 
 mod tool;
 
-use tool::get_tools;
+use tool::{get_tools, read_tool};
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -49,10 +49,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }))
         .await?;
 
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    eprintln!("Logs from your program will appear here!");
-
-    if let Some(content) = response["choices"][0]["message"]["content"].as_str() {
+    if let Some(tool_calls) = response["choices"][0]["message"]["tool_calls"].as_array() {
+        for tool_call in tool_calls {
+            match tool_call["function"]["name"].as_str() {
+                Some("Read") => match tool_call["function"]["arguments"].as_str() {
+                    Some(arguments) => {
+                        print!(
+                            "{}",
+                            read_tool(serde_json::from_str::<Value>(arguments).unwrap()["file_path"].as_str().unwrap())
+                        )
+                    }
+                    None => (),
+                },
+                _ => (),
+            }
+        }
+    } else if let Some(content) = response["choices"][0]["message"]["content"].as_str() {
         println!("{}", content);
     }
 
