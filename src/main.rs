@@ -3,6 +3,10 @@ use clap::Parser;
 use serde_json::{Value, json};
 use std::{env, process};
 
+mod tool;
+
+use tool::get_tools;
+
 #[derive(Parser)]
 #[command(author, version, about)]
 struct Args {
@@ -28,6 +32,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = Client::with_config(config);
 
+    let tools = get_tools();
+
     #[allow(unused_variables)]
     let response: Value = client
         .chat()
@@ -39,6 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             ],
             "model": "anthropic/claude-haiku-4.5",
+            "tools": tools
         }))
         .await?;
 
