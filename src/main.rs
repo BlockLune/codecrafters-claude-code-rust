@@ -56,7 +56,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Some(arguments) => {
                         print!(
                             "{}",
-                            read_tool(serde_json::from_str::<Value>(arguments).unwrap()["file_path"].as_str().unwrap())
+                            read_tool(
+                                serde_json::from_str::<Value>(arguments).unwrap()["file_path"]
+                                    .as_str()
+                                    .unwrap()
+                            )
                         )
                     }
                     None => (),
