@@ -49,26 +49,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }))
         .await?;
 
-    if let Some(tool_calls) = response["choices"][0]["message"]["tool_calls"].as_array() {
+    let msg = &response["choices"][0]["message"];
+    if let Some(tool_calls) = msg["tool_calls"].as_array() {
         for tool_call in tool_calls {
-            match tool_call["function"]["name"].as_str() {
-                Some("Read") => match tool_call["function"]["arguments"].as_str() {
-                    Some(arguments) => {
-                        print!(
-                            "{}",
-                            read_tool(
-                                serde_json::from_str::<Value>(arguments).unwrap()["file_path"]
-                                    .as_str()
-                                    .unwrap()
-                            )
-                        )
+            let Some(function_name) = tool_call["function"]["name"].as_str() else {
+                continue;
+            };
+            let Some(function_arguments) = tool_call["function"]["arguments"].as_str() else {
+                continue;
+            };
+
+            match function_name {
+                "Read" => {
+                    let args: Value = serde_json::from_str(function_arguments).unwrap_or_default();
+                    if let Some(file_path) = args["file_path"].as_str() {
+                        print!("{}", read_tool(file_path));
                     }
-                    None => (),
-                },
+                }
                 _ => (),
             }
         }
-    } else if let Some(content) = response["choices"][0]["message"]["content"].as_str() {
+    } else if let Some(content) = msg["content"].as_str() {
         println!("{}", content);
     }
 
