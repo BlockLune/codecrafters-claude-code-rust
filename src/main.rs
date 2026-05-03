@@ -1,7 +1,10 @@
 use async_openai::{Client, config::OpenAIConfig};
 use clap::Parser;
 use serde_json::{Value, json};
-use std::{env, process};
+use std::{
+    env,
+    process::{self, exit},
+};
 
 mod tool;
 
@@ -31,47 +34,54 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_api_key(api_key);
 
     let client = Client::with_config(config);
-
     let tools = get_tools();
 
-    #[allow(unused_variables)]
-    let response: Value = client
-        .chat()
-        .create_byot(json!({
-            "messages": [
-                {
-                    "role": "user",
-                    "content": args.prompt
-                }
-            ],
-            "model": "anthropic/claude-haiku-4.5",
-            "tools": tools
-        }))
-        .await?;
+    let first_msg = json!({ "role": "user", "content": args.prompt });
+    let mut msgs = vec![first_msg];
 
-    let msg = &response["choices"][0]["message"];
-    if let Some(tool_calls) = msg["tool_calls"].as_array() {
-        for tool_call in tool_calls {
-            let Some(function_name) = tool_call["function"]["name"].as_str() else {
-                continue;
-            };
-            let Some(function_arguments) = tool_call["function"]["arguments"].as_str() else {
-                continue;
-            };
+    loop {
+        let response: Value = client
+            .chat()
+            .create_byot(json!({
+                "messages": msgs,
+                "model": "anthropic/claude-haiku-4.5",
+                "tools": tools
+            }))
+            .await?;
 
-            match function_name {
-                "Read" => {
-                    let args: Value = serde_json::from_str(function_arguments).unwrap_or_default();
-                    if let Some(file_path) = args["file_path"].as_str() {
-                        print!("{}", read_tool(file_path));
+        let msg = (&response["choices"][0]["message"]).clone();
+        msgs.push(msg.clone());
+
+        if let Some(content) = msg["content"].as_str() {
+            println!("{}", content);
+            exit(0);
+        }
+
+        if let Some(tool_calls) = msg["tool_calls"].as_array() {
+            for tool_call in tool_calls {
+                let Some(function_name) = tool_call["function"]["name"].as_str() else {
+                    continue;
+                };
+                let Some(function_arguments) = tool_call["function"]["arguments"].as_str() else {
+                    continue;
+                };
+
+                match function_name {
+                    "Read" => {
+                        let args: Value =
+                            serde_json::from_str(function_arguments).unwrap_or_default();
+                        if let Some(file_path) = args["file_path"].as_str() {
+                            let tool_msg = json!({
+                                "role": "tool",
+                                "tool_call_id": tool_call["id"].as_str().unwrap(),
+                                "content": read_tool(file_path),
+                            });
+                            msgs.push(tool_msg);
+                        }
                     }
+                    _ => (),
                 }
-                _ => (),
             }
         }
-    } else if let Some(content) = msg["content"].as_str() {
-        println!("{}", content);
     }
-
-    Ok(())
 }
