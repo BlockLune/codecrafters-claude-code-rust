@@ -33,29 +33,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::with_config(config);
     let tools = get_tools();
 
-    let system_msg = json!({ "role": "system", "content": "If you are asked to read a file and then answer a question based on its content, do not say: \"I'll read the file first\", just read the file and provide the final answer."});
     let first_msg = json!({ "role": "user", "content": args.prompt });
-    let mut msgs = vec![system_msg, first_msg];
+    let mut msgs = vec![first_msg];
 
     loop {
         let response: Value = client
             .chat()
             .create_byot(json!({
                 "messages": msgs,
-                "model": "deepseek/deepseek-v4-pro",
+                "model": "anthropic/claude-haiku-4.5",
                 "tools": tools
             }))
             .await?;
 
         let msg = (&response["choices"][0]["message"]).clone();
         msgs.push(msg.clone());
-
-        eprintln!("DEBUG: msgs: {:#?}", msgs);
-
-        if let Some(content) = msg["content"].as_str() {
-            println!("{}", content);
-            break;
-        }
 
         if let Some(tool_calls) = msg["tool_calls"].as_array() {
             for tool_call in tool_calls {
@@ -82,6 +74,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     _ => (),
                 }
             }
+        } else if let Some(content) = msg["content"].as_str() {
+            println!("{}", content);
+            break;
         }
     }
 
