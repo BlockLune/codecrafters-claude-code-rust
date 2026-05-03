@@ -4,10 +4,7 @@ use serde_json::{Value, json};
 use std::{env, process};
 
 mod tool;
-
-use tool::{get_tools, read_tool};
-
-use crate::tool::write_tool;
+use tool::{get_tools, read_tool, write_tool, bash_tool};
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -86,6 +83,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 "role": "tool",
                                 "tool_call_id": tool_call["id"].as_str().unwrap(),
                                 "content": write_tool(file_path, content),
+                            });
+                            msgs.push(tool_msg);
+                        }
+                    }
+                    "Bash" => {
+                        let args: Value =
+                            serde_json::from_str(function_arguments).unwrap_or_default();
+                        if let Some(command) = args["command"].as_str() {
+                            let tool_msg = json!({
+                                "role": "tool",
+                                "tool_call_id": tool_call["id"].as_str().unwrap(),
+                                "content": bash_tool(command),
                             });
                             msgs.push(tool_msg);
                         }
