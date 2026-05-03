@@ -1,10 +1,7 @@
 use async_openai::{Client, config::OpenAIConfig};
 use clap::Parser;
 use serde_json::{Value, json};
-use std::{
-    env,
-    process::{self, exit},
-};
+use std::{env, process};
 
 mod tool;
 
@@ -54,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if let Some(content) = msg["content"].as_str() {
             println!("{}", content);
-            exit(0);
+            break;
         }
 
         if let Some(tool_calls) = msg["tool_calls"].as_array() {
@@ -84,4 +81,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
+
+    Ok(())
 }
