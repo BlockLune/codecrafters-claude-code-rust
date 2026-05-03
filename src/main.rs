@@ -33,8 +33,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::with_config(config);
     let tools = get_tools();
 
+    let system_msg = json!({ "role": "system", "content": "If you are asked to read a file and then answer a question based on its content, do not say: \"I'll read the file first\", just read the file and provide the final answer."});
     let first_msg = json!({ "role": "user", "content": args.prompt });
-    let mut msgs = vec![first_msg];
+    let mut msgs = vec![system_msg, first_msg];
 
     loop {
         let response: Value = client
