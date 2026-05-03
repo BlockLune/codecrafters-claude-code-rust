@@ -49,6 +49,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let msg = (&response["choices"][0]["message"]).clone();
         msgs.push(msg.clone());
 
+        eprintln!("DEBUG: msgs: {:#?}", msgs);
+
         if let Some(content) = msg["content"].as_str() {
             println!("{}", content);
             break;
