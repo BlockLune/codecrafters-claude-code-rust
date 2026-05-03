@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .chat()
             .create_byot(json!({
                 "messages": msgs,
-                "model": "anthropic/claude-haiku-4.5",
+                "model": "deepseek/deepseek-v4-pro",
                 "tools": tools
             }))
             .await?;
