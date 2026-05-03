@@ -11,6 +11,9 @@ pub fn read_tool(file_path: &str) -> String {
     fs::read_to_string(file_path).unwrap_or_default()
 }
 
-pub fn write_tool(file_path: &str, content: &str) {
-    fs::write(file_path, content).unwrap()
+pub fn write_tool(file_path: &str, content: &str) -> String {
+    match fs::write(file_path, content) {
+        Ok(_) => format!("Successfully wrote to file {}", file_path),
+        Err(_) => format!("Failed to write to file {}", file_path),
+    }
 }
