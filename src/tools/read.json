@@ -11,7 +11,9 @@
           "description": "The path to the file to read"
         }
       },
-      "required": ["file_path"]
+      "required": [
+        "file_path"
+      ]
     }
   }
 }

@@ -7,6 +7,8 @@ mod tool;
 
 use tool::{get_tools, read_tool};
 
+use crate::tool::write_tool;
+
 #[derive(Parser)]
 #[command(author, version, about)]
 struct Args {
@@ -67,6 +69,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 "role": "tool",
                                 "tool_call_id": tool_call["id"].as_str().unwrap(),
                                 "content": read_tool(file_path),
+                            });
+                            msgs.push(tool_msg);
+                        }
+                    }
+                    "Write" => {
+                        let args: Value =
+                            serde_json::from_str(function_arguments).unwrap_or_default();
+                        let file_path_option = args["file_path"].as_str();
+                        let content_option = args["content"].as_str();
+
+                        if file_path_option.is_some() && content_option.is_some() {
+                            let file_path = file_path_option.unwrap();
+                            let content = content_option.unwrap();
+                            let tool_msg = json!({
+                                "role": "tool",
+                                "tool_call_id": tool_call["id"].as_str().unwrap(),
+                                "content": write_tool(file_path, content),
                             });
                             msgs.push(tool_msg);
                         }
