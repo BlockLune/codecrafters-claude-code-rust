@@ -41,6 +41,11 @@ pub struct LoadedSkills(Vec<Skill>);
 impl LoadedSkills {
     pub fn load_from(path: &Path) -> Self {
         let mut skills = Vec::new();
+
+        if !path.exists() {
+            return Self(skills);
+        }
+
         let entries = fs::read_dir(&path)
             .unwrap()
             .into_iter()
