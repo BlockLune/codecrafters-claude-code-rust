@@ -1,10 +1,13 @@
+mod message;
+mod tool;
+
 use async_openai::{Client, config::OpenAIConfig};
 use clap::Parser;
 use serde_json::{Value, json};
 use std::{env, process};
+use tool::{bash_tool, get_tools, read_tool, write_tool};
 
-mod tool;
-use tool::{get_tools, read_tool, write_tool, bash_tool};
+use crate::message::build_system_prompt;
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -13,6 +16,8 @@ struct Args {
     prompt: String,
     #[arg(long)]
     model: Option<String>,
+    #[arg(long)]
+    append_system_prompt: Option<String>,
 }
 
 #[tokio::main]
@@ -34,10 +39,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::with_config(config);
     let tools = get_tools();
 
-    let first_msg = json!({ "role": "user", "content": args.prompt });
-    let mut msgs = vec![first_msg];
+    let system_prompt = json!({ "role": "system", "content": build_system_prompt(args.append_system_prompt.as_deref())});
+    let first_user_msg = json!({ "role": "user", "content": args.prompt });
+    let mut msgs = vec![system_prompt, first_user_msg];
 
-    let model = args.model.unwrap_or("anthropic/claude-haiku-4.5".to_string());
+    let model = args
+        .model
+        .unwrap_or("anthropic/claude-haiku-4.5".to_string());
 
     loop {
         let response: Value = client

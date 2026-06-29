@@ -3,9 +3,9 @@ use std::process::Command;
 
 pub fn get_tools() -> Vec<serde_json::Value> {
     vec![
-        serde_json::from_str(include_str!("./tools/read.json")).unwrap(),
-        serde_json::from_str(include_str!("./tools/write.json")).unwrap(),
-        serde_json::from_str(include_str!("./tools/bash.json")).unwrap(),
+        serde_json::from_str(include_str!("./config/tool/read.json")).unwrap(),
+        serde_json::from_str(include_str!("./config/tool/write.json")).unwrap(),
+        serde_json::from_str(include_str!("./config/tool/bash.json")).unwrap(),
     ]
 }
 
