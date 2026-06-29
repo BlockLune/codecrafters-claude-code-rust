@@ -11,6 +11,8 @@ use tool::{get_tools, read_tool, write_tool, bash_tool};
 struct Args {
     #[arg(short = 'p', long)]
     prompt: String,
+    #[arg(long)]
+    model: Option<String>,
 }
 
 #[tokio::main]
@@ -35,12 +37,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let first_msg = json!({ "role": "user", "content": args.prompt });
     let mut msgs = vec![first_msg];
 
+    let model = args.model.unwrap_or("anthropic/claude-haiku-4.5".to_string());
+
     loop {
         let response: Value = client
             .chat()
             .create_byot(json!({
                 "messages": msgs,
-                "model": "anthropic/claude-haiku-4.5",
+                "model": model,
                 "tools": tools
             }))
             .await?;
