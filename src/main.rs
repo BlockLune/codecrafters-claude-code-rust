@@ -1,4 +1,5 @@
 mod message;
+mod skill;
 mod tool;
 
 use async_openai::{Client, config::OpenAIConfig};
