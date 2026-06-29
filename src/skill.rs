@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::fs;
 use std::path::{Path, PathBuf};
 use xml::writer::{EmitterConfig, XmlEvent};
@@ -39,75 +40,59 @@ impl Skill {
 pub struct LoadedSkills(Vec<Skill>);
 
 impl LoadedSkills {
-    pub fn load_from(path: &Path) -> Self {
+    pub fn load_from(path: &Path) -> Result<Self> {
         let mut skills = Vec::new();
 
         if !path.exists() {
-            return Self(skills);
+            return Ok(Self(skills));
         }
 
-        let entries = fs::read_dir(&path)
-            .unwrap()
+        for entry in fs::read_dir(&path)?
             .into_iter()
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
-
-        for entry in entries {
+            .collect::<Result<Vec<_>, _>>()?
+        {
             let skill_md = entry.path().join("SKILL.md");
             if let Ok(content) = fs::read_to_string(&skill_md) {
-                let (frontmatter, _) =
-                    markdown_frontmatter::parse::<SkillMdFrontmatter>(&content).unwrap();
+                let (frontmatter, _) = markdown_frontmatter::parse::<SkillMdFrontmatter>(&content)?;
                 let skill = Skill::new(&frontmatter.name, &frontmatter.description, &skill_md);
                 skills.push(skill);
             }
         }
 
-        Self(skills)
+        Ok(Self(skills))
     }
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
-    pub fn xml(&self) -> String {
+    pub fn xml(&self) -> Result<String> {
         let mut buffer = Vec::new();
         let mut writer = EmitterConfig::new()
             .write_document_declaration(false)
             .perform_indent(true)
             .create_writer(&mut buffer);
 
-        writer
-            .write(XmlEvent::start_element("available_skills"))
-            .unwrap();
-
+        writer.write(XmlEvent::start_element("available_skills"))?;
         for skill in self.0.iter() {
-            writer.write(XmlEvent::start_element("skill")).unwrap();
-
+            writer.write(XmlEvent::start_element("skill"))?;
             {
-                writer.write(XmlEvent::start_element("name")).unwrap();
-                writer.write(XmlEvent::characters(skill.name())).unwrap();
-                writer.write(XmlEvent::end_element()).unwrap();
+                writer.write(XmlEvent::start_element("name"))?;
+                writer.write(XmlEvent::characters(skill.name()))?;
+                writer.write(XmlEvent::end_element())?;
 
-                writer
-                    .write(XmlEvent::start_element("description"))
-                    .unwrap();
-                writer
-                    .write(XmlEvent::characters(skill.description()))
-                    .unwrap();
-                writer.write(XmlEvent::end_element()).unwrap();
+                writer.write(XmlEvent::start_element("description"))?;
+                writer.write(XmlEvent::characters(skill.description()))?;
+                writer.write(XmlEvent::end_element())?;
 
-                writer.write(XmlEvent::start_element("location")).unwrap();
-                writer
-                    .write(XmlEvent::characters(&skill.location().to_string_lossy()))
-                    .unwrap();
-                writer.write(XmlEvent::end_element()).unwrap();
+                writer.write(XmlEvent::start_element("location"))?;
+                writer.write(XmlEvent::characters(&skill.location().to_string_lossy()))?;
+                writer.write(XmlEvent::end_element())?;
             }
-
-            writer.write(XmlEvent::end_element()).unwrap();
+            writer.write(XmlEvent::end_element())?;
         }
+        writer.write(XmlEvent::end_element())?;
 
-        writer.write(XmlEvent::end_element()).unwrap();
-
-        String::from_utf8(buffer).unwrap()
+        Ok(String::from_utf8(buffer)?)
     }
 }

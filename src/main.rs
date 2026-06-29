@@ -2,10 +2,11 @@ mod message;
 mod skill;
 mod tool;
 
+use anyhow::{Context, Result};
 use async_openai::{Client, config::OpenAIConfig};
 use clap::Parser;
 use serde_json::{Value, json};
-use std::{env, process};
+use std::env;
 use tool::{bash_tool, get_tools, read_tool, write_tool};
 
 use crate::message::build_system_prompt;
@@ -22,16 +23,12 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     let args = Args::parse();
 
-    let base_url = env::var("OPENROUTER_BASE_URL")
-        .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
-
-    let api_key = env::var("OPENROUTER_API_KEY").unwrap_or_else(|_| {
-        eprintln!("OPENROUTER_API_KEY is not set");
-        process::exit(1);
-    });
+    let base_url =
+        env::var("OPENROUTER_BASE_URL").unwrap_or("https://openrouter.ai/api/v1".to_string());
+    let api_key = env::var("OPENROUTER_API_KEY").context("OPENROUTER_API_KEY is not set")?;
 
     let config = OpenAIConfig::new()
         .with_api_base(base_url)
@@ -40,9 +37,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::with_config(config);
     let tools = get_tools();
 
-    let system_prompt = json!({ "role": "system", "content": build_system_prompt(args.append_system_prompt.as_deref())});
+    let system_prompt = build_system_prompt(args.append_system_prompt.as_deref())?;
+    let system_msg = json!({ "role": "system", "content": system_prompt});
     let first_user_msg = json!({ "role": "user", "content": args.prompt });
-    let mut msgs = vec![system_prompt, first_user_msg];
+    let mut msgs = vec![system_msg, first_user_msg];
 
     let model = args
         .model
