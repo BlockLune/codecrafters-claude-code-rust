@@ -67,7 +67,9 @@ async fn main() -> Result<()> {
                 let Some(function_name) = tool_call["function"]["name"].as_str() else {
                     continue;
                 };
-                let function_arguments = tool_call["function"]["arguments"].clone();
+                let Some(function_arguments) = tool_call["function"]["arguments"].as_str() else {
+                    continue;
+                };
                 let tool_msg = tool::execute(tool_call_id, function_name, &function_arguments)?;
                 msgs.push(tool_msg);
             }

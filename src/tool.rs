@@ -13,7 +13,9 @@ pub fn get_tools() -> Vec<serde_json::Value> {
 #[derive(Debug, Error)]
 pub enum ToolError {
     #[error("Unknown tool: {0}")]
-    Unknown(String),
+    UnknownTool(String),
+    #[error("Failed to parse arguments")]
+    FailedToParseArguments,
     #[error("Missing argument: {0}")]
     MissingArg(&'static str),
     #[error("Failed to read: {0}")]
@@ -50,11 +52,7 @@ fn bash_tool(command: &str) -> Result<String, ToolError> {
         .map_err(|_| ToolError::FailedToRunBash)
 }
 
-pub fn execute(
-    id: &str,
-    name: &str,
-    args: &serde_json::Value,
-) -> Result<serde_json::Value, ToolError> {
+pub fn execute(id: &str, name: &str, args: &str) -> Result<serde_json::Value, ToolError> {
     let build_tool_msg = |content: &str| -> serde_json::Value {
         serde_json::json!({
             "role": "tool",
@@ -62,6 +60,9 @@ pub fn execute(
             "content": content,
         })
     };
+
+    let args: serde_json::Value =
+        serde_json::from_str(args).map_err(|_| ToolError::FailedToParseArguments)?;
 
     match name {
         "Read" => {
@@ -85,6 +86,6 @@ pub fn execute(
                 .ok_or(ToolError::MissingArg("command"))?;
             Ok(build_tool_msg(&bash_tool(command)?))
         }
-        _ => Err(ToolError::Unknown(name.to_owned())),
+        _ => Err(ToolError::UnknownTool(name.to_owned())),
     }
 }
