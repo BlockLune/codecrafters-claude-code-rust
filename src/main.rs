@@ -7,7 +7,7 @@ use async_openai::{Client, config::OpenAIConfig};
 use clap::Parser;
 use serde_json::{Value, json};
 use std::env;
-use tool::{execute_tool_and_get_msg, get_tools};
+use tool::get_tools;
 
 use crate::message::build_system_prompt;
 
@@ -68,11 +68,7 @@ async fn main() -> Result<()> {
                     continue;
                 };
                 let function_arguments = tool_call["function"]["arguments"].clone();
-                let Some(tool_msg) =
-                    execute_tool_and_get_msg(tool_call_id, function_name, &function_arguments)
-                else {
-                    continue;
-                };
+                let tool_msg = tool::execute(tool_call_id, function_name, &function_arguments)?;
                 msgs.push(tool_msg);
             }
         } else if let Some(content) = msg["content"].as_str() {
