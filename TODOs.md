@@ -1,0 +1,2 @@
+- [ ] streaming output (SSE)
+- [ ] `grokbuild` inspired async tool calls execution
