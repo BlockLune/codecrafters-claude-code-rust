@@ -61,13 +61,11 @@ async fn main() -> Result<()> {
 
         if let Some(tool_calls) = msg["tool_calls"].as_array() {
             for tool_call in tool_calls {
-                let Some(tool_call_id) = tool_call["id"].as_str() else {
-                    continue;
-                };
-                let Some(function_name) = tool_call["function"]["name"].as_str() else {
-                    continue;
-                };
-                let Some(function_arguments) = tool_call["function"]["arguments"].as_str() else {
+                let (Some(tool_call_id), Some(function_name), Some(function_arguments)) = (
+                    tool_call["id"].as_str(),
+                    tool_call["function"]["name"].as_str(),
+                    tool_call["function"]["arguments"].as_str(),
+                ) else {
                     continue;
                 };
                 let tool_msg = tool::execute(tool_call_id, function_name, &function_arguments)?;
