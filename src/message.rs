@@ -1,11 +1,9 @@
+use crate::skill::LoadedSkills;
 use anyhow::Result;
 use std::path::PathBuf;
-use std::env;
-use crate::skill::LoadedSkills;
 
 pub fn build_system_prompt(appending: Option<&str>) -> Result<String> {
-    let home_path_str = env::var("HOME")?;
-    let skills_path = PathBuf::from(home_path_str).join(".agents/skills");
+    let skills_path = PathBuf::from("./.claude/skills");
     let skills = LoadedSkills::load_from(&skills_path)?;
 
     let mut system_prompt = String::from(include_str!("./config/prompt/system_prompt.md").trim());
